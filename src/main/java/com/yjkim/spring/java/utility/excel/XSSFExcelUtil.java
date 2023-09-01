@@ -1,5 +1,10 @@
 package com.yjkim.spring.java.utility.excel;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import lombok.Data;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFCell;
@@ -9,7 +14,6 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 /**
  * XSSFExcel 관련 유틸리티
  * <p>
- * <p>
  * import
  * - https://mvnrepository.com/artifact/org.apache.poi/poi
  * - https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml
@@ -18,6 +22,55 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
  */
 public class XSSFExcelUtil
 {
+    @Data
+    public static class MergeRegionItem
+    {
+        // cell
+        private int firstColumn;
+        private int lastColumn;
+        private XSSFCell cell;
+
+        public MergeRegionItem(XSSFRow row, CellRangeAddress address)
+        {
+            firstColumn = address.getFirstColumn();
+            lastColumn = address.getLastColumn();
+            cell = row.getCell(firstColumn);
+        }
+
+        public boolean isRegion(int col)
+        {
+            return firstColumn <= col && col <= lastColumn;
+        }
+    }
+
+    public static Map<Integer, List<MergeRegionItem>> cellRangeAddressToMergeRegionItem(XSSFSheet sheet,
+        List<CellRangeAddress> cellRangeAddressList)
+    {
+        Map<Integer, List<MergeRegionItem>> map = new HashMap<>();
+        for (CellRangeAddress address : cellRangeAddressList)
+        {
+            int firstRow = address.getFirstRow();
+            List<MergeRegionItem> list = map.containsKey(firstRow) ? map.get(firstRow) : new ArrayList<>();
+            list.add(new MergeRegionItem(sheet.getRow(firstRow), address));
+            map.put(firstRow, list);
+        }
+        return map;
+    }
+
+    public static String getMergedRegionValue(Map<Integer, List<XSSFExcelUtil.MergeRegionItem>> map, int rowIx,
+        int colIx)
+    {
+        if (map.containsKey(rowIx))
+        {
+            MergeRegionItem item = map.get(rowIx).stream().filter(x -> x.isRegion(colIx)).findFirst().orElse(null);
+            if (item != null)
+            {
+                return getCellStringValue(item.getCell());
+            }
+        }
+        return null;
+    }
+
     /**
      * 해당 시트의 {@param rowIx}행 {@param colIx}열 셀의 값
      *
