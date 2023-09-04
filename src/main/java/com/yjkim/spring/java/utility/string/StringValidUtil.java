@@ -14,65 +14,14 @@ import org.apache.commons.lang3.StringUtils;
 public class StringValidUtil
 {
 
+    // HEX color 패턴
     private static final Pattern HEX_COLOR_PATTERN = Pattern.compile("^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$");
+    // 이메일 패턴
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[_a-z0-9-]+(.[_a-z0-9-]+)*@(?:\\w+\\.)+\\w+$");
 
-    public static boolean checkPwdValid(String pwd)
-    {
-        if (pwd == null || isWhiteSpace(pwd))
-        {
-            return true;
-        }
-
-        boolean result = true;
-
-        int checkCount = 0;
-        if (isDigit(pwd))
-        {
-            checkCount++;
-        }
-        if (isChar(pwd))
-        {
-            checkCount++;
-        }
-        if (isSPChar(pwd))
-        {
-            checkCount++;
-        }
-
-        if (checkCount >= 3 && pwd.length() >= 8)
-        {
-            result = false;
-        } else if (checkCount >= 2 && pwd.length() >= 10)
-        {
-            result = false;
-        }
-
-        return result;
-    }
-
-    public static boolean checkPwdValid2(String pwd)
-    {
-        Boolean result = false;
-
-        String 공백 = "/[\\s]/g";
-        String 문자숫자 = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{10,20}$"; // 문자, 숫자
-        String 문자특수문자 = "^(?=.*[A-Za-z])(?=.*[$@$!%*#?&])[A-Za-z$@$!%*#?&]{10,20}$"; // 문자, 특수문자
-        String 숫자특수문자 = "^(?=.*\\d)(?=.*[$@$!%*#?&])[\\d$@$!%*#?&]{10,20}$"; // 숫자, 특수문자
-        String 문자숫자특수문자 = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[$@$!%*#?&])[A-Za-z\\d$@$!%*#?&]{8,20}$"; // 문자, 숫자, 특수문자
-
-        // @formatter:off
-        if (Pattern.matches(공백, pwd) == false
-            && (Pattern.matches(문자숫자, pwd)
-            || Pattern.matches(문자특수문자, pwd)
-            || Pattern.matches(숫자특수문자, pwd)
-            || Pattern.matches(문자숫자특수문자, pwd)))
-        {
-            result = true;
-        }
-        // @formatter:on
-
-        return result;
-    }
+    private static final String ZERO_TO_255 = "(\\d{1,2}|(0|1)\\d{2}|2[0-4]\\d|25[0-5])";
+    private static final Pattern IP_PATTERN = Pattern.compile(
+        ZERO_TO_255 + "\\." + ZERO_TO_255 + "\\." + ZERO_TO_255 + "\\." + ZERO_TO_255);
 
     /**
      * 유효한 이메일 문자열인지 반환
@@ -88,9 +37,7 @@ public class StringValidUtil
             return result;
         }
 
-        String regex = "^[_a-z0-9-]+(.[_a-z0-9-]+)*@(?:\\w+\\.)+\\w+$";
-        Pattern p = Pattern.compile(regex);
-        Matcher m = p.matcher(email);
+        Matcher m = EMAIL_PATTERN.matcher(email);
         if (m.matches())
         {
             result = false;
@@ -107,8 +54,7 @@ public class StringValidUtil
     public static boolean isWhiteSpace(String pwd)
     {
         String regex = "\\s";
-        Matcher matcher = Pattern.compile(regex).matcher(pwd);
-        return matcher.find();
+        return Pattern.compile(regex).matcher(pwd).find();
     }
 
     /**
@@ -120,51 +66,48 @@ public class StringValidUtil
     public static boolean isDigit(String pwd)
     {
         String regex = "[0-9]";
-        Matcher matcher = Pattern.compile(regex).matcher(pwd);
-        return matcher.find();
+        return Pattern.compile(regex).matcher(pwd).find();
     }
 
     /**
-     * pwd에 특수문자가 있는지 판별한다.
+     * 문자가 있는지 판별한다.
      *
-     * @param pwd 비밀번호
+     * @param str
      * @return 판별여부
      */
-    public static boolean isChar(String pwd)
+    public static boolean isIncludeChar(String str)
     {
         String regex = "[a-zA-Z]";
-        Matcher matcher = Pattern.compile(regex).matcher(pwd);
-        return matcher.find();
+        return Pattern.compile(regex).matcher(str).find();
     }
 
     /**
-     * pwd에 특수문자가 있는지 판별한다.
+     * 특수문자가 있는지 판별한다.
      *
-     * @param pwd 비밀번호
+     * @param str
      * @return 판별여부
      */
-    public static boolean isSPChar(String pwd)
+    public static boolean isIncludeSPChar(String str)
     {
         String regex = "^[0-9|a-z|A-Z|ㄱ-ㅎ|ㅏ-ㅣ|가-힣]*$";
-        Matcher matcher = Pattern.compile(regex).matcher(pwd);
-        return !matcher.find();
+        return !Pattern.compile(regex).matcher(str).find();
     }
 
     /**
-     * pwd에 연속된 숫자 / 문자가 있는지 판별한다.
+     * 연속된 숫자 / 문자가 있는지 판별한다.
      *
-     * @param pwd 비밀번호
+     * @param str
      * @return 판별여부
      */
-    public static boolean isContinuous(String pwd)
+    public static boolean isIncludeContinuous(String str)
     {
-        int len = pwd.length();
+        int len = str.length();
         boolean check = false;
         boolean isPositive = false;
         for (int i = 0; i < len - 1; i++)
         {
-            char now = pwd.charAt(i);
-            char next = pwd.charAt(i + 1);
+            char now = str.charAt(i);
+            char next = str.charAt(i + 1);
             int value = now - next;
             boolean tempB = value > 0;
             if (Math.abs(value) == 1)
@@ -187,16 +130,15 @@ public class StringValidUtil
     }
 
     /**
-     * pwd에 같은 문자 / 숫자가 3개이상 반복되는지 판별한다.
+     * 같은 문자 / 숫자가 3개이상 반복되는지 판별한다.
      *
      * @param pwd 비밀번호
      * @return 판별여부
      */
-    public static boolean isSame(String pwd)
+    public static boolean isInclude3Same(String pwd)
     {
         String regex = "(\\w)\\1\\1";
-        Matcher matcher = Pattern.compile(regex).matcher(pwd);
-        return matcher.find();
+        return Pattern.compile(regex).matcher(pwd).find();
     }
 
     /**
@@ -237,15 +179,14 @@ public class StringValidUtil
      * @param colorCode
      * @return
      */
-    public static boolean isHexColor(String colorCode)
+    public static boolean isHexColorCode(String colorCode)
     {
         if (colorCode == null || colorCode.isBlank())
         {
             return true;
         }
 
-        Matcher matcher = HEX_COLOR_PATTERN.matcher(colorCode);
-        return matcher.matches();
+        return HEX_COLOR_PATTERN.matcher(colorCode).matches();
     }
 
     /**
@@ -257,10 +198,7 @@ public class StringValidUtil
         {
             return null;
         }
-        String zeroTo255 = "(\\d{1,2}|(0|1)\\d{2}|2[0-4]\\d|25[0-5])";
-        String regex = zeroTo255 + "\\." + zeroTo255 + "\\." + zeroTo255 + "\\." + zeroTo255;
 
-        Pattern pattern = Pattern.compile(regex);
-        return pattern.matcher(str).matches();
+        return IP_PATTERN.matcher(str).matches();
     }
 }

@@ -35,6 +35,10 @@ dependencies {
     implementation 'org.apache.poi:poi:5.2.3'
     // https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml
     implementation 'org.apache.poi:poi-ooxml:5.2.3'
+
+    // https://mvnrepository.com/artifact/com.google.guava/guava
+    implementation 'com.google.guava:guava:32.1.2-jre'
+
 }
 
 tasks.named('test') {
